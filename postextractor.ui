@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>624</width>
-    <height>425</height>
+    <width>714</width>
+    <height>432</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>PostExtractor</string>
+   <string>WP Post Extractor</string>
   </property>
   <widget class="QWidget" name="centralWidget"/>
   <widget class="QMenuBar" name="menuBar">
@@ -19,7 +19,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>624</width>
+     <width>714</width>
      <height>20</height>
     </rect>
    </property>

@@ -7,6 +7,7 @@
 #include <QPlainTextEdit>
 #include <QFileSystemModel>
 #include <QLineEdit>
+#include <QWebView>
 
 namespace Ui {
 class PostExtractor;
@@ -30,12 +31,15 @@ private slots:
     void simpan_clicked();
     void listview_clicked(const QModelIndex &index);
 
+    void on_actionAbout_triggered();
+
 private:
     Ui::PostExtractor *ui;
     QSplitter *pisah;
     QListView *listView;
     QTextEdit *plainText;
     QLineEdit *jalurSimpan;
+    QWebView *tampilHtml;
     QFileSystemModel *ramban;
 };
 

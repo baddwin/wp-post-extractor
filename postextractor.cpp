@@ -14,6 +14,9 @@
 #include <QJsonValue>
 #include <QByteArray>
 #include <QSize>
+#include <QDateTime>
+#include <QWebFrame>
+#include <QMessageBox>
 #include <QDebug>
 
 PostExtractor::PostExtractor(QWidget *parent) :
@@ -24,6 +27,8 @@ PostExtractor::PostExtractor(QWidget *parent) :
     pisah = new QSplitter(parent);
     listView = new QListView;
     plainText = new QTextEdit;
+    plainText->setReadOnly(true);
+    tampilHtml = new QWebView(parent);
     QPushButton *namaSimpan = new QPushButton("Simpan sbg");
     QPushButton *simpan = new QPushButton("Simpan");
     jalurSimpan = new QLineEdit();
@@ -33,7 +38,7 @@ PostExtractor::PostExtractor(QWidget *parent) :
     jajar->addWidget(jalurSimpan);
     jajar->addWidget(simpan);
     pisah->addWidget(listView);
-    pisah->addWidget(plainText);
+    pisah->addWidget(tampilHtml);
     pisah->setStretchFactor(1,1);
     kisi->addWidget(pisah,0,0);
 
@@ -79,17 +84,37 @@ void PostExtractor::on_actionOpen_Folder_triggered()
 
 void PostExtractor::namaSimpan_clicked()
 {
-    qDebug() << "Clicked namasimpan";
+    //qDebug() << "Clicked namasimpan";
+    QString simpanNama = QFileDialog::getSaveFileName(this,"Simpan dengan nama",
+                                                      jalurSimpan->text(),
+                                                      "Teks atau HTML (*.txt *.html *.htm)");
+    if(!simpanNama.isEmpty())
+        jalurSimpan->setText(simpanNama);
 }
 
 void PostExtractor::simpan_clicked()
 {
-    qDebug() << "Clicked simpan";
+    //qDebug() << "Clicked simpan";
+    QFile simpanan(jalurSimpan->text());
+    if(simpanan.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        //simpanan.write(plainText->toPlainText().toUtf8());
+        QString simpanTeks = tampilHtml->page()->currentFrame()->toHtml();
+        simpanan.write(simpanTeks.toUtf8());
+        QMessageBox::information(this,"Berhasil","File sudah tersimpan: "+jalurSimpan->text());
+    }
+    else
+    {
+        tampilHtml->setHtml("<h2>Tidak bisa menyimpan</h2>");
+    }
+    //plainText->append("</ol>");
+    simpanan.close();
 }
 
 void PostExtractor::listview_clicked(const QModelIndex &index)
 {
     //qDebug() << index;
+    //ui->statusBar->showMessage((QString)index.row());
     QString jalurFile = ramban->fileInfo(index).absoluteFilePath();
     QFile file(jalurFile);
     jalurSimpan->setText(jalurFile.replace(".json",".html"));
@@ -101,21 +126,40 @@ void PostExtractor::listview_clicked(const QModelIndex &index)
     QJsonParseError err;
     QJsonDocument doc = QJsonDocument::fromJson(isiJson,&err);
     QJsonObject objek = doc.object();
-    QJsonValue posting = objek.value("posts");
-    QJsonArray isiPos = posting.toArray();
-    //QJsonArray isi = ;
-    //qDebug() << objek["found"];
-    //qDebug() << posting.isArray();
-    //qDebug() << isiPos.first().type();
-    //QJsonObject isi = isiPos.first().toObject();
-    //qDebug() << isi.value("ID");
-    plainText->setText("");
-    for(int i = 0; i < isiPos.size(); ++i){
-        QJsonObject isi = isiPos.at(i).toObject();
-        plainText->append(isi.value("title").toString());
+    if(!objek.value("found").isNull()){
+        QJsonValue posting = objek.value("posts");
+        QJsonArray isiPos = posting.toArray();
+        //QJsonArray isi = ;
+        //qDebug() << objek["found"];
+        //qDebug() << posting.isArray();
+        //qDebug() << isiPos.first().type();
+        //QJsonObject isi = isiPos.first().toObject();
+        //qDebug() << isi.value("ID");
+        //plainText->setText("");
+        QString html;
+        ui->statusBar->showMessage("Loading....");
+        for(int i = isiPos.size(); i-- > 0;){
+            QJsonObject isi = isiPos.at(i).toObject();
+            QDateTime tanggal = QDateTime::fromString(isi.value("date").toString(),Qt::ISODate);
+            QString tanggalPos = tanggal.toString("<p>dd MMMM yyyy hh:mm</p>");
+//            plainText->append("<h2>"+isi.value("title").toString()+"</h2>\n");
+//            plainText->append(tanggalPos);
+//            plainText->append(isi.value("short_URL").toString());
+//            plainText->append(isi.value("content").toString());
+            //html.append("<b>"+isi.value("title").toString()+"</b> "+tanggalPos);
+            html.append("<h2>"+isi.value("title").toString()+"</h2>\n");
+            html.append(tanggalPos);
+            html.append("<p>"+isi.value("short_URL").toString()+"</p>");
+            html.append(isi.value("content").toString());
+        }
+        tampilHtml->setHtml(html);
+        ui->statusBar->showMessage("Selesai.");
     }
-    //plainText->append("</ol>");
-
+    else
+    {
+        tampilHtml->setHtml("<h2>Bukan file yang dimaksud</h2>");
+    }
+    file.close();
     /**
       Kerangka dokument JSON:
 
@@ -169,4 +213,16 @@ void PostExtractor::listview_clicked(const QModelIndex &index)
      "meta":
      "current_user_can":
     */
+}
+
+void PostExtractor::on_actionAbout_triggered()
+{
+    //QMessageBox::information(this,"Berhasil","File sudah tersimpan: "+jalurSimpan->text());
+    QMessageBox tentang;
+    tentang.setText(tr("Ekstraktor postingan blog WP"));
+    tentang.setInformativeText(tr("Mengubah postingan blog wordpress.com yang diunduh dengan API.\n\n"
+                                  "(c) 2014 Slamet Badwi"));
+    //tentang.setIconPixmap(QPixmap::fromImage(QImage(":/res/icon-apt.svg"),Qt::AutoColor));
+    tentang.setIcon(QMessageBox::Information);
+    tentang.exec();
 }
