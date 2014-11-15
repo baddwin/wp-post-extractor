@@ -29,6 +29,7 @@ private slots:
     void on_actionOpen_Folder_triggered();
     void namaSimpan_clicked();
     void simpan_clicked();
+    void simpanTxt_clicked();
     void listview_clicked(const QModelIndex &index);
 
     void on_actionAbout_triggered();
